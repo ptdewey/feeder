@@ -14,7 +14,7 @@ pub type Feed {
 }
 
 pub type NewFeed {
-  NewFeed(url: String, title: String, description: Option(String))
+  NewFeed(url: String, title: Option(String), description: Option(String))
 }
 
 pub type FeedError {

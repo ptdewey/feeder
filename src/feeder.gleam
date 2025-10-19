@@ -11,8 +11,7 @@ pub fn main() {
   wisp.configure_logger()
 
   // Initialize database
-  // TODO: move this code into a module in database
-  let assert Ok(db) = sqlight.open("file:feeds.sqlite3")
+  let assert Ok(db) = sqlight.open("file:feeder.sqlite3")
   migration.run(db)
 
   // Start web server

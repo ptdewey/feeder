@@ -1,4 +1,4 @@
-import feeds/feed.{type Feed, type FeedError, type NewFeed, Feed}
+import feeds/feed.{type Feed, type FeedError, type NewFeed}
 import gleam/dynamic/decode
 import sqlight.{type Connection}
 
@@ -8,7 +8,7 @@ pub fn get_all(db: Connection) -> Result(List(Feed), FeedError) {
     SELECT id, url, title, description, added_at, last_checked, is_active
     FROM feeds
     ORDER BY added_at DESC
-    "
+  "
 
   case sqlight.query(sql, db, [], feed_decoder()) {
     Ok(feeds) -> Ok(feeds)
@@ -58,7 +58,7 @@ pub fn insert(db: Connection, new_feed: NewFeed) -> Result(Feed, FeedError) {
 
   let params = [
     sqlight.text(new_feed.url),
-    sqlight.text(new_feed.title),
+    sqlight.nullable(sqlight.text, new_feed.title),
     sqlight.nullable(sqlight.text, new_feed.description),
   ]
 
@@ -84,7 +84,7 @@ pub fn update(
 
   let params = [
     sqlight.text(new_feed.url),
-    sqlight.text(new_feed.title),
+    sqlight.nullable(sqlight.text, new_feed.title),
     sqlight.nullable(sqlight.text, new_feed.description),
     sqlight.int(id),
   ]
@@ -106,11 +106,7 @@ pub fn delete(db: Connection, id: Int) -> Result(Nil, FeedError) {
   }
 }
 
-pub fn update_last_checked(
-  db: Connection,
-  id: Int,
-  last_checked: String,
-) -> Result(Nil, FeedError) {
+pub fn update_last_checked(db: Connection, id: Int) -> Result(Nil, FeedError) {
   let sql =
     "
     UPDATE feeds
@@ -118,12 +114,7 @@ pub fn update_last_checked(
     WHERE id = ?
     "
 
-  let params = [
-    sqlight.text(last_checked),
-    sqlight.int(id),
-  ]
-
-  case sqlight.query(sql, db, params, { decode.success(Nil) }) {
+  case sqlight.query(sql, db, [sqlight.int(id)], { decode.success(Nil) }) {
     Ok([feed]) -> Ok(feed)
     Ok([]) -> Error(feed.NotFound)
     Ok(_) -> Error(feed.DatabaseError("Update failed"))
@@ -148,7 +139,7 @@ fn feed_decoder() -> decode.Decoder(Feed) {
       }
     })
 
-    decode.success(Feed(
+    decode.success(feed.Feed(
       id: id,
       url: url,
       title: title,
