@@ -1,0 +1,8 @@
+# Feed URLs (one per line, lines starting with # are comments)
+https://mrcjkb.dev/atom.xml
+https://robinroses.xyz/feed.xml
+https://blog.ihatereality.space/rss.xml
+https://xn--gckvb8fzb.com/index.xml
+https://hamvocke.com/feed-tech.xml
+https://ludic.mataroa.blog/rss/
+https://emilyliu.me/rss

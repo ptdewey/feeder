@@ -27,7 +27,8 @@ pub fn insert(db: Connection, posts: NewPost) -> Result(Post, FeedError) {
     Ok([post]) -> Ok(post)
     Ok([]) -> Error(feed.AlreadyExists)
     Ok(_) -> Error(feed.DatabaseError("Unexpected number of posts returned"))
-    Error(e) -> Error(feed.DatabaseError("Failed to insert post: " <> string.inspect(e)))
+    Error(e) ->
+      Error(feed.DatabaseError("Failed to insert post: " <> string.inspect(e)))
   }
 }
 

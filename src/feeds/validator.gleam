@@ -43,3 +43,4 @@ pub fn validate_description(description: String) -> Result(Nil, FeedError) {
     _ -> Ok(Nil)
   }
 }
+

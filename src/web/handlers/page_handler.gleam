@@ -1,5 +1,4 @@
 import feeds/feed
-import feeds/post
 import feeds/post_repository
 import feeds/repository
 import feeds/service
@@ -7,8 +6,13 @@ import gleam/http
 import gleam/int
 import gleam/list
 import gleam/option.{None, Some}
-import gleam/string
+import nakai
+import nakai/attr
+import nakai/html.{type Node}
 import sqlight
+import view/add_feeds
+import view/feeds as feeds_view
+import view/home as home_view
 import wisp.{type Request, type Response}
 
 pub fn home(_req: Request, db: sqlight.Connection) -> Response {
@@ -17,7 +21,9 @@ pub fn home(_req: Request, db: sqlight.Connection) -> Response {
     Error(_) -> []
   }
 
-  let html = html_layout("RSS Aggregator - Recent Posts", render_home(posts))
+  let html =
+    html_layout("RSS Aggregator - Recent Posts", home_view.render(posts))
+    |> nakai.to_string
   wisp.html_response(html, 200)
 }
 
@@ -27,14 +33,18 @@ pub fn list_feeds(_req: Request, db: sqlight.Connection) -> Response {
     Error(_) -> []
   }
 
-  let html = html_layout("Feeds", render_feeds(feeds))
+  let html =
+    html_layout("Feeds", feeds_view.render(feeds))
+    |> nakai.to_string
   wisp.html_response(html, 200)
 }
 
 pub fn add_feed(req: Request, db: sqlight.Connection) -> Response {
   case req.method {
     http.Get -> {
-      let html = html_layout("Add Feed", render_add_feed_form(None))
+      let html =
+        html_layout("Add Feed", add_feeds.render(None))
+        |> nakai.to_string
       wisp.html_response(html, 200)
     }
     http.Post -> {
@@ -49,14 +59,16 @@ pub fn add_feed(req: Request, db: sqlight.Connection) -> Response {
             Error(err) -> {
               let error_msg = feed_error_to_string(err)
               let html =
-                html_layout("Add Feed", render_add_feed_form(Some(error_msg)))
+                html_layout("Add Feed", add_feeds.render(Some(error_msg)))
+                |> nakai.to_string
               wisp.html_response(html, 400)
             }
           }
         }
         None -> {
           let html =
-            html_layout("Add Feed", render_add_feed_form(Some("URL is required")))
+            html_layout("Add Feed", add_feeds.render(Some("URL is required")))
+            |> nakai.to_string
           wisp.html_response(html, 400)
         }
       }
@@ -75,7 +87,11 @@ pub fn refresh_all_feeds(req: Request, db: sqlight.Connection) -> Response {
   }
 }
 
-pub fn refresh_feed(req: Request, db: sqlight.Connection, id: String) -> Response {
+pub fn refresh_feed(
+  req: Request,
+  db: sqlight.Connection,
+  id: String,
+) -> Response {
   case req.method {
     http.Post -> {
       case int.parse(id) {
@@ -90,14 +106,32 @@ pub fn refresh_feed(req: Request, db: sqlight.Connection, id: String) -> Respons
   }
 }
 
-fn html_layout(title: String, content: String) -> String {
-  "<!DOCTYPE html>
-<html lang=\"en\">
-<head>
-  <meta charset=\"UTF-8\">
-  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">
-  <title>" <> title <> "</title>
-  <style>
+pub fn feed_posts(_req: Request, db: sqlight.Connection, id: String) -> Response {
+  case int.parse(id) {
+    Ok(feed_id) -> {
+      let feed = repository.get_by_id(db, feed_id)
+      let posts = case post_repository.get_by_feed(db, feed_id, 100) {
+        Ok(posts) -> posts
+        Error(_) -> []
+      }
+
+      case feed {
+        Ok(f) -> {
+          let html =
+            html_layout("Posts - " <> f.title, home_view.render(posts))
+            |> nakai.to_string
+          wisp.html_response(html, 200)
+        }
+        Error(_) -> wisp.not_found()
+      }
+    }
+    Error(_) -> wisp.bad_request("Invalid feed ID")
+  }
+}
+
+fn html_layout(page_title: String, content: Node) -> Node {
+  let styles =
+    "
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; color: #333; background: #f5f5f5; }
     .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
@@ -116,134 +150,39 @@ fn html_layout(title: String, content: String) -> String {
     .post-meta { color: #7f8c8d; font-size: 0.9rem; }
     .feed-item { padding: 1rem; border-bottom: 1px solid #eee; }
     .feed-item:last-child { border-bottom: none; }
-    .feed-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
-    .feed-url { color: #7f8c8d; font-size: 0.9rem; }
+     .feed-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
+     .feed-title a { color: #2c3e50; text-decoration: none; }
+     .feed-title a:hover { color: #3498db; text-decoration: underline; }
+     .feed-url { color: #7f8c8d; font-size: 0.9rem; }
     .btn { display: inline-block; padding: 0.75rem 1.5rem; background: #3498db; color: white; text-decoration: none; border-radius: 4px; border: none; cursor: pointer; font-size: 1rem; }
     .btn:hover { background: #2980b9; }
     .form-group { margin-bottom: 1rem; }
     .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
     .form-group input { width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; }
     .error { background: #e74c3c; color: white; padding: 1rem; border-radius: 4px; margin-bottom: 1rem; }
-  </style>
-</head>
-<body>
-  <nav>
-    <div class=\"container\">
-      <a href=\"/\">Home</a>
-      <a href=\"/feeds\">Feeds</a>
-      <a href=\"/feeds/new\">Add Feed</a>
-    </div>
-  </nav>
-  <div class=\"container\">
-    " <> content <> "
-  </div>
-</body>
-</html>"
-}
+  "
 
-fn render_home(posts: List(post.Post)) -> String {
-  "<h1>Recent Posts</h1>
-  <form method=\"POST\" action=\"/feeds/refresh\" style=\"margin-bottom: 1rem;\">
-    <button type=\"submit\" class=\"btn\" style=\"background: #27ae60;\">Refresh All Feeds</button>
-  </form>
-  <div class=\"card\">"
-  <> case posts {
-    [] -> "<p>No posts yet. Add some feeds to get started!</p>"
-    _ ->
-      posts
-      |> list.map(fn(post) {
-        let description = case post.description {
-          Some(desc) -> "<p class=\"post-meta\">" <> desc <> "</p>"
-          None -> ""
-        }
-        let date = case post.published_at {
-          Some(published) -> published
-          None -> post.fetched_at
-        }
-        "<div class=\"post-item\">
-          <div class=\"post-title\"><a href=\""
-        <> post.link
-        <> "\" target=\"_blank\">"
-        <> post.title
-        <> "</a></div>"
-        <> description
-        <> "<div class=\"post-meta\">Published: "
-        <> date
-        <> "</div>
-        </div>"
-      })
-      |> string.join("")
-  }
-  <> "</div>"
-}
-
-fn render_feeds(feeds: List(feed.Feed)) -> String {
-  "<h1>Your Feeds</h1>
-  <div style=\"margin-bottom: 1rem;\">
-    <a href=\"/feeds/new\" class=\"btn\">Add New Feed</a>
-    <form method=\"POST\" action=\"/feeds/refresh\" style=\"display: inline; margin-left: 0.5rem;\">
-      <button type=\"submit\" class=\"btn\" style=\"background: #27ae60;\">Refresh All Feeds</button>
-    </form>
-  </div>
-  <div class=\"card\">"
-  <> case feeds {
-    [] -> "<p>No feeds yet. Add one to get started!</p>"
-    _ ->
-      feeds
-      |> list.map(fn(feed) {
-        let description = case feed.description {
-          Some(desc) -> "<p class=\"feed-url\">" <> desc <> "</p>"
-          None -> ""
-        }
-        let last_checked = case feed.last_checked {
-          Some(checked) -> "Last checked: " <> checked
-          None -> "Never checked"
-        }
-        let id_str = case feed.id {
-          Some(id) -> int.to_string(id)
-          None -> "0"
-        }
-        "<div class=\"feed-item\">
-          <div class=\"feed-title\">"
-        <> feed.title
-        <> "</div>
-          <p class=\"feed-url\">"
-        <> feed.url
-        <> "</p>"
-        <> description
-        <> "<p class=\"post-meta\">"
-        <> last_checked
-        <> "</p>
-          <form method=\"POST\" action=\"/feeds/"
-        <> id_str
-        <> "/refresh\" style=\"display: inline;\">
-            <button type=\"submit\" class=\"btn\" style=\"font-size: 0.9rem; padding: 0.5rem 1rem;\">Refresh</button>
-          </form>
-        </div>"
-      })
-      |> string.join("")
-  }
-  <> "</div>"
-}
-
-fn render_add_feed_form(error: option.Option(String)) -> String {
-  let error_html = case error {
-    Some(msg) -> "<div class=\"error\">" <> msg <> "</div>"
-    None -> ""
-  }
-
-  "<h1>Add New Feed</h1>"
-  <> error_html
-  <> "<div class=\"card\">
-    <form method=\"POST\" action=\"/feeds/new\">
-      <div class=\"form-group\">
-        <label for=\"url\">Feed URL</label>
-        <input type=\"url\" id=\"url\" name=\"url\" placeholder=\"https://example.com/feed.xml\" required>
-      </div>
-      <button type=\"submit\" class=\"btn\">Add Feed</button>
-      <a href=\"/feeds\" style=\"margin-left: 1rem;\">Cancel</a>
-    </form>
-  </div>"
+  html.Html([], [
+    html.Head([
+      html.meta([attr.charset("UTF-8")]),
+      html.meta([
+        attr.name("viewport"),
+        attr.content("width=device-width, initial-scale=1.0"),
+      ]),
+      html.title(page_title),
+      html.Element("style", [], [html.Text(styles)]),
+    ]),
+    html.Body([], [
+      html.nav([], [
+        html.div([attr.class("container")], [
+          html.a([attr.href("/")], [html.Text("Home")]),
+          html.a([attr.href("/feeds")], [html.Text("Feeds")]),
+          html.a([attr.href("/feeds/new")], [html.Text("Add Feed")]),
+        ]),
+      ]),
+      html.div([attr.class("container")], [content]),
+    ]),
+  ])
 }
 
 fn feed_error_to_string(error: feed.FeedError) -> String {

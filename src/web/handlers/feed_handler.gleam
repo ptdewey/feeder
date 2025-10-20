@@ -1,3 +1,4 @@
+import config
 import feeds/feed.{type Feed, type NewFeed}
 import feeds/repository
 import feeds/service
@@ -144,6 +145,8 @@ pub fn refresh(_req: Request, db: Connection, id: String) -> Response {
 }
 
 pub fn refresh_all(_req: Request, db: Connection) -> Response {
+  let _ = config.reload_feeds_from_config(db)
+
   case service.refresh_all_feeds(db) {
     Ok(_) -> wisp.no_content()
     Error(_) -> wisp.internal_server_error()

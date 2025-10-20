@@ -14,6 +14,7 @@ pub fn handle_request(req: Request, db: sqlight.Connection) -> Response {
     ["feeds"] -> page_handler.list_feeds(req, db)
     ["feeds", "new"] -> page_handler.add_feed(req, db)
     ["feeds", "refresh"] -> page_handler.refresh_all_feeds(req, db)
+    ["feeds", id, "posts"] -> page_handler.feed_posts(req, db, id)
     ["feeds", id, "refresh"] -> page_handler.refresh_feed(req, db, id)
 
     // API endpoints

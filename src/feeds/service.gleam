@@ -6,7 +6,9 @@ import feeds/validator
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/result
+import gleam/string
 import http/client
+import simplifile
 import sqlight.{type Connection}
 import xml/parser
 
@@ -86,7 +88,11 @@ pub fn add_feed(db: Connection, new_feed: NewFeed) -> Result(Feed, FeedError) {
           description: metadata.description,
         )
 
-      repository.insert(db, final_feed)
+      use inserted_feed <- result.try(repository.insert(db, final_feed))
+
+      let _ = save_feed_url_to_config(new_feed.url)
+
+      Ok(inserted_feed)
     }
     Error(e) -> Error(e)
   }
@@ -134,4 +140,37 @@ fn fetch_feed_metadata(url: String) -> Result(FeedMetadata, FeedError) {
     title: parsed_xml.title,
     description: parsed_xml.description,
   ))
+}
+
+fn save_feed_url_to_config(url: String) -> Result(Nil, String) {
+  case simplifile.read("feeds.txt") {
+    Ok(content) -> {
+      let urls = parse_feed_urls(content)
+      case list.contains(urls, url) {
+        True -> Ok(Nil)
+        False -> {
+          let new_content = content <> "\n" <> url
+          case simplifile.write("feeds.txt", new_content) {
+            Ok(_) -> Ok(Nil)
+            Error(_) -> Error("Failed to write to feeds.txt")
+          }
+        }
+      }
+    }
+    Error(_) -> {
+      case simplifile.write("feeds.txt", url) {
+        Ok(_) -> Ok(Nil)
+        Error(_) -> Error("Failed to create feeds.txt")
+      }
+    }
+  }
+}
+
+fn parse_feed_urls(content: String) -> List(String) {
+  content
+  |> string.split("\n")
+  |> list.map(string.trim)
+  |> list.filter(fn(line) {
+    !string.is_empty(line) && !string.starts_with(line, "#")
+  })
 }
