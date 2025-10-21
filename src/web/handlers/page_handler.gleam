@@ -133,33 +133,33 @@ fn html_layout(page_title: String, content: Node) -> Node {
   let styles =
     "
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; color: #333; background: #f5f5f5; }
+    body { font-family: Georgia, 'Times New Roman', serif; line-height: 1.7; color: #3d3428; background: #e8dfc5; font-size: 1.1rem; }
     .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-    nav { background: #2c3e50; color: white; padding: 1rem 0; margin-bottom: 2rem; }
+    nav { background: #8b7355; color: #f4ecd8; padding: 1rem 0; margin-bottom: 2rem; }
     nav .container { display: flex; gap: 2rem; align-items: center; }
-    nav a { color: white; text-decoration: none; font-weight: 500; }
+    nav a { color: #f4ecd8; text-decoration: none; font-weight: 500; font-size: 1.1rem; }
     nav a:hover { text-decoration: underline; }
-    h1 { margin-bottom: 1.5rem; color: #2c3e50; }
-    h2 { margin-bottom: 1rem; color: #34495e; }
-    .card { background: white; border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    .post-item { border-bottom: 1px solid #eee; padding: 1rem 0; }
+    h1 { margin-bottom: 1.5rem; color: #5d4e37; font-size: 2rem; }
+    h2 { margin-bottom: 1rem; color: #6b5d4f; font-size: 1.5rem; }
+    .card { background: #f4ecd8; border-radius: 8px; padding: 1.5rem; margin-bottom: 1rem; box-shadow: 0 2px 4px rgba(61, 52, 40, 0.1); border: 1px solid #d4cdc0; }
+    .post-item { border-bottom: 1px solid #d4cdc0; padding: 0.5rem 0; }
     .post-item:last-child { border-bottom: none; }
-    .post-title { font-size: 1.2rem; margin-bottom: 0.5rem; }
-    .post-title a { color: #3498db; text-decoration: none; }
-    .post-title a:hover { text-decoration: underline; }
-    .post-meta { color: #7f8c8d; font-size: 0.9rem; }
-    .feed-item { padding: 1rem; border-bottom: 1px solid #eee; }
+    .post-title { font-size: 1.3rem; margin-bottom: 0.5rem; }
+    .post-title a { color: #6b5d4f; text-decoration: none; }
+    .post-title a:hover { text-decoration: underline; color: #8b7355; }
+    .post-meta { color: #9b8b7e; font-size: 1rem; }
+    .feed-item { padding: 0.5rem; border-bottom: 1px solid #d4cdc0; }
     .feed-item:last-child { border-bottom: none; }
-     .feed-title { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
-     .feed-title a { color: #2c3e50; text-decoration: none; }
-     .feed-title a:hover { color: #3498db; text-decoration: underline; }
-     .feed-url { color: #7f8c8d; font-size: 0.9rem; }
-    .btn { display: inline-block; padding: 0.75rem 1.5rem; background: #3498db; color: white; text-decoration: none; border-radius: 4px; border: none; cursor: pointer; font-size: 1rem; }
-    .btn:hover { background: #2980b9; }
+     .feed-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem; }
+     .feed-title a { color: #5d4e37; text-decoration: none; }
+     .feed-title a:hover { color: #8b7355; text-decoration: underline; }
+     .feed-url { color: #9b8b7e; font-size: 1rem; }
+    .btn { display: inline-block; padding: 0.75rem 1.5rem; background: #a89074; color: #f4ecd8; text-decoration: none; border-radius: 4px; border: none; cursor: pointer; font-size: 1.1rem; font-family: Georgia, 'Times New Roman', serif; }
+    .btn:hover { background: #8b7355; }
     .form-group { margin-bottom: 1rem; }
-    .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
-    .form-group input { width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 4px; font-size: 1rem; }
-    .error { background: #e74c3c; color: white; padding: 1rem; border-radius: 4px; margin-bottom: 1rem; }
+    .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 1.1rem; }
+    .form-group input { width: 100%; padding: 0.75rem; border: 1px solid #d4cdc0; border-radius: 4px; font-size: 1.1rem; background: #f4ecd8; color: #3d3428; font-family: Georgia, 'Times New Roman', serif; }
+    .error { background: #b5745a; color: #f4ecd8; padding: 1rem; border-radius: 4px; margin-bottom: 1rem; font-size: 1.1rem; }
   "
 
   html.Html([], [

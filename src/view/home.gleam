@@ -17,11 +17,7 @@ pub fn render(posts: List(post.Post)) -> Node {
       ],
       [
         html.button(
-          [
-            attr.type_("submit"),
-            attr.class("btn"),
-            attr.style("background: #27ae60;"),
-          ],
+          [attr.type_("submit"), attr.class("btn")],
           [html.Text("Refresh All Feeds")],
         ),
       ],
@@ -56,16 +52,16 @@ pub fn render(posts: List(post.Post)) -> Node {
                      html.Text(p.title),
                    ]),
                   html.Text(" "),
-                  html.span(
-                    [
-                      attr.style(
-                        "color: #999; font-style: italic; font-size: 0.9rem;",
-                      ),
-                    ],
-                    [
-                      html.Text(format_date(date)),
-                    ],
-                  ),
+                   html.span(
+                     [
+                       attr.style(
+                         "color: #9b8b7e; font-style: italic; font-size: 0.9rem;",
+                       ),
+                     ],
+                     [
+                       html.Text(format_date(date)),
+                     ],
+                   ),
                 ]),
               ],
               description,

@@ -22,11 +22,7 @@ pub fn render(feeds: List(feed.Feed)) -> Node {
         ],
         [
           html.button(
-            [
-              attr.type_("submit"),
-              attr.class("btn"),
-              attr.style("background: #27ae60;"),
-            ],
+            [attr.type_("submit"), attr.class("btn")],
             [html.Text("Refresh All Feeds")],
           ),
         ],
