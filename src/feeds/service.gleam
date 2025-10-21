@@ -3,6 +3,7 @@ import feeds/post
 import feeds/post_repository
 import feeds/repository
 import feeds/validator
+import gleam/erlang/process
 import gleam/list
 import gleam/option.{None, Some}
 import gleam/result
@@ -54,6 +55,10 @@ pub fn fetch_posts(db: Connection, feed: Feed) -> Result(Int, FeedError) {
   }
 }
 
+pub type RefreshResult {
+  RefreshResult(feed_id: Int, count: Result(Int, FeedError))
+}
+
 pub fn refresh_feed(db: Connection, id: Int) -> Result(Int, FeedError) {
   use feed <- result.try(repository.get_by_id(db, id))
   fetch_posts(db, feed)
@@ -62,11 +67,23 @@ pub fn refresh_feed(db: Connection, id: Int) -> Result(Int, FeedError) {
 pub fn refresh_all_feeds(db: Connection) -> Result(Int, FeedError) {
   use feeds <- result.try(repository.get_all(db))
 
+  let result_subject = process.new_subject()
+  let feed_count = list.length(feeds)
+
+  list.each(feeds, fn(feed) {
+    process.spawn(fn() {
+      let result = fetch_posts(db, feed)
+      let feed_id = option.unwrap(feed.id, -1)
+      process.send(result_subject, RefreshResult(feed_id, result))
+    })
+  })
+
   let total =
-    list.fold(feeds, 0, fn(acc, feed) {
-      case fetch_posts(db, feed) {
-        Ok(count) -> acc + count
-        Error(_) -> acc
+    list.range(1, feed_count)
+    |> list.fold(0, fn(acc, _) {
+      case process.receive(result_subject, 10_000) {
+        Ok(RefreshResult(_, Ok(count))) -> acc + count
+        _ -> acc
       }
     })
 

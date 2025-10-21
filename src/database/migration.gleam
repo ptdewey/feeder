@@ -1,6 +1,6 @@
-import gleam/io
 import gleam/string
 import sqlight.{type Connection}
+import wisp
 
 pub fn run(db: Connection) {
   let sql =
@@ -41,11 +41,11 @@ pub fn run(db: Connection) {
 
   case sqlight.exec(sql, db) {
     Ok(_) -> {
-      io.println("Database migration completed successfully")
+      wisp.log_info("Database migration completed successfully")
       Nil
     }
     Error(e) -> {
-      io.println("Migration failed: " <> string.inspect(e))
+      wisp.log_error("Migration failed: " <> string.inspect(e))
       panic as "Failed to run migration"
     }
   }

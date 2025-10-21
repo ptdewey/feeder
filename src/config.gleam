@@ -1,49 +1,77 @@
-import feeds/feed.{type FeedError}
+import feeds/feed.{type Feed, type FeedError}
 import feeds/repository
 import feeds/service
-import gleam/io
+import gleam/erlang/process
 import gleam/list
 import gleam/option.{None}
 import gleam/string
 import simplifile
 import sqlight.{type Connection}
+import wisp
 
 pub fn load_initial_feeds(db: Connection) -> Result(Nil, String) {
   case repository.get_all(db) {
     Ok([]) -> {
-      io.println("No feeds found in database. Loading initial feeds from config...")
+      wisp.log_info(
+        "No feeds found in database. Loading initial feeds from config...",
+      )
       load_feeds_from_file(db, "feeds.txt")
     }
     Ok(_feeds) -> {
-      io.println("Database already contains feeds. Skipping initial load.")
+      wisp.log_info("Database already contains feeds. Skipping initial load.")
       Ok(Nil)
     }
     Error(_) -> {
-      io.println("Error checking database. Skipping initial load.")
+      wisp.log_warning("Error checking database. Skipping initial load.")
       Ok(Nil)
     }
   }
+}
+
+type AddFeedResult {
+  AddFeedResult(url: String, result: Result(Feed, FeedError))
 }
 
 fn load_feeds_from_file(db: Connection, path: String) -> Result(Nil, String) {
   case simplifile.read(path) {
     Ok(content) -> {
       let urls = parse_feed_urls(content)
-      io.println("Found " <> string.inspect(list.length(urls)) <> " feed URLs in config file")
-      
+      wisp.log_info(
+        "Found "
+        <> string.inspect(list.length(urls))
+        <> " feed URLs in config file",
+      )
+
+      let result_subject = process.new_subject()
+
       list.each(urls, fn(url) {
-        io.println("Adding feed: " <> url)
-        let new_feed = feed.NewFeed(url: url, title: None, description: None)
-        case service.add_feed(db, new_feed) {
-          Ok(_) -> io.println("  ✓ Successfully added: " <> url)
-          Error(e) -> io.println("  ✗ Failed to add: " <> url <> " - " <> feed_error_to_string(e))
+        process.spawn(fn() {
+          wisp.log_info("Adding feed: " <> url)
+          let new_feed = feed.NewFeed(url: url, title: None, description: None)
+          let result = service.add_feed(db, new_feed)
+          process.send(result_subject, AddFeedResult(url, result))
+        })
+      })
+
+      list.range(1, list.length(urls))
+      |> list.each(fn(_) {
+        case process.receive(result_subject, 30_000) {
+          Ok(AddFeedResult(url, Ok(_))) ->
+            wisp.log_info("Successfully added: " <> url)
+          Ok(AddFeedResult(url, Error(e))) ->
+            wisp.log_error(
+              "Failed to add: " <> url <> " - " <> feed_error_to_string(e),
+            )
+          Error(Nil) -> wisp.log_error("Timeout waiting for feed result")
         }
       })
-      
+
       Ok(Nil)
     }
     Error(_) -> {
-      io.println("Config file '" <> path <> "' not found. Skipping initial load.")
+      wisp.log_warning(
+        "Config file '" <> path <> "' not found. Skipping initial load.",
+      )
       Ok(Nil)
     }
   }
@@ -65,7 +93,7 @@ pub fn save_feed_url(url: String) -> Result(Nil, String) {
       case list.contains(urls, url) {
         True -> Ok(Nil)
         False -> {
-          let new_content = content <> "\n" <> url
+          let new_content = content <> url
           case simplifile.write("feeds.txt", new_content) {
             Ok(_) -> Ok(Nil)
             Error(_) -> Error("Failed to write to feeds.txt")

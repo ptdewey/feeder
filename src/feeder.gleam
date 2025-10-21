@@ -15,14 +15,14 @@ pub fn main() {
 
   let _ = config.load_initial_feeds(db)
 
-  let port = 8000
   let secret_key_base = wisp.random_string(64)
 
   let assert Ok(_) =
     router.handle_request(_, db)
     |> wisp_mist.handler(secret_key_base)
     |> mist.new
-    |> mist.port(port)
+    |> mist.bind("0.0.0.0")
+    |> mist.port(10_283)
     |> mist.start
 
   process.sleep_forever()

@@ -6,3 +6,6 @@ https://xn--gckvb8fzb.com/index.xml
 https://hamvocke.com/feed-tech.xml
 https://ludic.mataroa.blog/rss/
 https://emilyliu.me/rss
+
+https://gpanders.com/index.xml
+https://steveklabnik.com/feed.xml
