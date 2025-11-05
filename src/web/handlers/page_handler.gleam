@@ -202,16 +202,17 @@ fn html_layout(page_title: String, content: Node) -> Node {
     .form-group input { width: 100%; padding: 0.75rem; border: 1px solid #d4cdc0; border-radius: 4px; font-size: 1.1rem; background: #f4ecd8; color: #3d3428; font-family: Georgia, 'Times New Roman', serif; }
     .error { background: #b5745a; color: #f4ecd8; padding: 1rem; border-radius: 4px; margin-bottom: 1rem; font-size: 1.1rem; }
     .item-with-action { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; }
-    .item-content { flex: 1; min-width: 250px; }
+    .item-content { flex: 1; min-width: 0; }
     .item-action { flex-shrink: 0; }
     @media (max-width: 768px) {
       nav .container { gap: 1rem; }
       nav a { font-size: 1rem; }
       nav .nav-logout { width: 100%; margin-left: 0; margin-top: 0.5rem; }
-      .item-with-action { flex-direction: column; align-items: stretch; }
+      .item-with-action { flex-direction: column; align-items: stretch; gap: 0.5rem; }
       .item-action { width: 100%; }
       .item-action form { width: 100%; }
       .item-action button { width: 100%; }
+      #add-link-form .btn { width: 100%; }
     }
   "
 

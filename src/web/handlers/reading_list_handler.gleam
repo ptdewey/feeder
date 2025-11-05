@@ -2,6 +2,7 @@ import gleam/int
 import gleam/json
 import gleam/list
 import gleam/option
+import http/metadata
 import reading_list/reading_list_item.{type ReadingListItem}
 import reading_list/service
 import sqlight.{type Connection}
@@ -30,21 +31,55 @@ pub fn create(req: Request, db: Connection) -> Response {
   let url = list.key_find(form_data.values, "url")
   let title = list.key_find(form_data.values, "title")
   let description = list.key_find(form_data.values, "description")
+  let redirect = list.key_find(form_data.values, "redirect")
 
-  case url, title {
-    Ok(url_val), Ok(title_val) -> {
+  case url {
+    Ok(url_val) -> {
+      let title_val = case title {
+        Ok("") -> option.None
+        Ok(t) -> option.Some(t)
+        Error(_) -> option.None
+      }
+
+      let desc_val = case description {
+        Ok("") -> option.None
+        Ok(d) -> option.Some(d)
+        Error(_) -> option.None
+      }
+
+      let #(final_title, final_desc) = case title_val {
+        option.Some(t) -> #(option.Some(t), desc_val)
+        option.None -> {
+          case metadata.fetch_metadata(url_val) {
+            Ok(meta) -> #(meta.title, meta.description)
+            Error(_) -> #(option.None, option.None)
+          }
+        }
+      }
+
+      let final_title_str = case final_title {
+        option.Some(t) -> t
+        option.None -> url_val
+      }
+
       let new_item = reading_list_item.NewReadingListItem(
         url: url_val,
-        title: title_val,
-        description: case description {
-          Ok("") -> option.None
-          Ok(desc) -> option.Some(desc)
-          Error(_) -> option.None
-        },
+        title: final_title_str,
+        description: final_desc,
       )
 
       case service.add_item(db, new_item) {
-        Ok(_) -> wisp.redirect("/reading-list")
+        Ok(_) -> {
+          case redirect {
+            Ok("true") -> wisp.redirect("/reading-list")
+            _ -> {
+              case list.key_find(req.headers, "referer") {
+                Ok(ref) -> wisp.redirect(ref)
+                Error(_) -> wisp.redirect("/")
+              }
+            }
+          }
+        }
         Error(reading_list_item.InvalidUrl(msg)) -> {
           json.object([#("error", json.string(msg))])
           |> json.to_string
@@ -58,9 +93,10 @@ pub fn create(req: Request, db: Connection) -> Response {
         Error(_) -> wisp.internal_server_error()
       }
     }
-    _, _ -> wisp.bad_request("Missing required fields: url and title")
+    Error(_) -> wisp.bad_request("Missing required field: url")
   }
 }
+
 
 pub fn archive(_req: Request, db: Connection, id: String) -> Response {
   case int.parse(id) {

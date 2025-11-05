@@ -10,7 +10,7 @@ import nakai/html.{type Node}
 pub fn render(feeds: List(feed.Feed)) -> Node {
   html.Fragment([
     html.h1([], [html.Text("Your Feeds")]),
-    html.div([attr.style("margin-bottom: 1rem;")], [
+    html.div([attr.style("margin-bottom: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;")], [
       html.a([attr.href("/feeds/new"), attr.class("btn")], [
         html.Text("Add New Feed"),
       ]),
@@ -18,7 +18,7 @@ pub fn render(feeds: List(feed.Feed)) -> Node {
         [
           attr.method("POST"),
           attr.action("/feeds/refresh"),
-          attr.style("display: inline; margin-left: 0.5rem;"),
+          attr.style("display: inline;"),
         ],
         [
           html.button(

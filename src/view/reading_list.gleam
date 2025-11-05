@@ -19,6 +19,11 @@ pub fn render(items: List(reading_list_item.ReadingListItem)) -> Node {
             attr.id("add-link-form"),
           ],
           [
+            html.input([
+              attr.type_("hidden"),
+              attr.name("redirect"),
+              attr.value("true"),
+            ]),
             html.div([attr.style("margin-bottom: 1rem;")], [
               html.label([attr.for("url")], [html.Text("URL")]),
               html.input([
@@ -31,13 +36,12 @@ pub fn render(items: List(reading_list_item.ReadingListItem)) -> Node {
               ]),
             ]),
             html.div([attr.style("margin-bottom: 1rem;")], [
-              html.label([attr.for("title")], [html.Text("Title")]),
+              html.label([attr.for("title")], [html.Text("Title (optional)")]),
               html.input([
                 attr.type_("text"),
                 attr.id("title"),
                 attr.name("title"),
-                attr.placeholder("Article Title"),
-                attr.Attr("required", ""),
+                attr.placeholder("Leave blank to fetch from page"),
                 attr.style("width: 100%; padding: 0.5rem; margin-top: 0.25rem;"),
               ]),
             ]),
@@ -47,8 +51,8 @@ pub fn render(items: List(reading_list_item.ReadingListItem)) -> Node {
                 [
                   attr.id("description"),
                   attr.name("description"),
-                  attr.placeholder("Brief description of the link"),
-                  attr.style("width: 100%; padding: 0.5rem; margin-top: 0.25rem; min-height: 80px;"),
+                  attr.placeholder("Leave blank to fetch from page"),
+                  attr.style("width: 100%; padding: 0.5rem; margin-top: 0.25rem; min-height: 50px;"),
                 ],
                 [html.Text("")],
               ),
@@ -64,6 +68,7 @@ pub fn render(items: List(reading_list_item.ReadingListItem)) -> Node {
     html.h2([], [html.Text("Your Reading List")]),
     html.div([attr.class("card")], case items {
       [] -> [html.p([], [html.Text("No items in your reading list yet. Add one above!")])]
+
       _ ->
         list.map(items, fn(item) {
           let description = case item.description {
@@ -115,6 +120,7 @@ pub fn render(items: List(reading_list_item.ReadingListItem)) -> Node {
           )
         })
     }),
+
   ])
 }
 
