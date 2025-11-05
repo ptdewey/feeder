@@ -1,3 +1,4 @@
+import auth/service as auth_service
 import feeds/feed.{type Feed, type FeedError}
 import feeds/repository
 import feeds/service
@@ -122,4 +123,60 @@ fn feed_error_to_string(error: FeedError) -> String {
     feed.NotFound -> "Feed not found"
     feed.DatabaseError(msg) -> "Database error: " <> msg
   }
+}
+
+pub type UserConfig {
+  UserConfig(username: String, password: String)
+}
+
+pub fn load_users(db: Connection) -> Result(Nil, String) {
+  case simplifile.read("users.txt") {
+    Ok(content) -> {
+      let users = parse_users(content)
+      wisp.log_info(
+        "Loading "
+        <> string.inspect(list.length(users))
+        <> " users from config file",
+      )
+
+      list.each(users, fn(user_config) {
+        case
+          auth_service.create_user_from_config(
+            db,
+            user_config.username,
+            user_config.password,
+          )
+        {
+          Ok(_) ->
+            wisp.log_info("Successfully loaded user: " <> user_config.username)
+          Error(_) ->
+            wisp.log_error("Failed to load user: " <> user_config.username)
+        }
+      })
+
+      Ok(Nil)
+    }
+    Error(_) -> {
+      wisp.log_warning(
+        "Config file 'users.txt' not found. No users will be loaded.",
+      )
+      Ok(Nil)
+    }
+  }
+}
+
+fn parse_users(content: String) -> List(UserConfig) {
+  content
+  |> string.split("\n")
+  |> list.map(string.trim)
+  |> list.filter(fn(line) {
+    !string.is_empty(line) && !string.starts_with(line, "#")
+  })
+  |> list.filter_map(fn(line) {
+    case string.split(line, ":") {
+      [username, password] ->
+        Ok(UserConfig(username: string.trim(username), password: string.trim(password)))
+      _ -> Error(Nil)
+    }
+  })
 }

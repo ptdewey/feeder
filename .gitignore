@@ -2,6 +2,6 @@
 *.ez
 /build
 erl_crash.dump
-
 *.db
 *.sqlite3
+users.txt

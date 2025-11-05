@@ -44,28 +44,58 @@ pub fn render(posts: List(post.Post)) -> Node {
            }
            let link = normalize_link(p.link)
            html.div(
-             [attr.class("post-item")],
-             list.flatten([
-               [
-                 html.div([attr.class("post-title")], [
-                   html.a([attr.href(link), attr.target("_blank")], [
-                     html.Text(p.title),
-                   ]),
-                  html.Text(" "),
-                   html.span(
-                     [
-                       attr.style(
-                         "color: #9b8b7e; font-style: italic; font-size: 0.9rem;",
-                       ),
-                     ],
-                     [
-                       html.Text(format_date(date)),
-                     ],
-                   ),
-                ]),
-              ],
-              description,
-            ]),
+             [attr.class("post-item item-with-action")],
+             [
+               html.div([attr.class("item-content")], list.flatten([
+                 [
+                   html.div([attr.class("post-title")], [
+                     html.a([attr.href(link), attr.target("_blank")], [
+                       html.Text(p.title),
+                     ]),
+                    html.Text(" "),
+                     html.span(
+                       [
+                         attr.style(
+                           "color: #9b8b7e; font-style: italic; font-size: 0.9rem;",
+                         ),
+                       ],
+                       [
+                         html.Text(format_date(date)),
+                       ],
+                     ),
+                  ]),
+                ],
+                description,
+              ])),
+              html.div([attr.class("item-action")], [
+                html.form(
+                  [
+                    attr.method("POST"),
+                    attr.action("/api/reading-list"),
+                  ],
+                  [
+                    html.input([
+                      attr.type_("hidden"),
+                      attr.name("url"),
+                      attr.value(link),
+                    ]),
+                    html.input([
+                      attr.type_("hidden"),
+                      attr.name("title"),
+                      attr.value(p.title),
+                    ]),
+                    html.button(
+                      [
+                        attr.type_("submit"),
+                        attr.class("btn"),
+                        attr.style("font-size: 0.9rem; padding: 0.5rem 1rem;"),
+                      ],
+                      [html.Text("Add to Reading List")],
+                    ),
+                  ],
+                ),
+              ]),
+            ],
           )
         })
     }),
@@ -101,8 +131,37 @@ fn decode_html_entities(text: String) -> String {
 }
 
 fn format_date(date_str: String) -> String {
-  case string.split(date_str, " ") {
-    [_day, day_num, month, year, ..] -> day_num <> " " <> month <> " " <> year
+  let date_part = case string.split(date_str, "T") {
+    [date, _] -> date
+    _ -> case string.split(date_str, " ") {
+      [date, _] -> date
+      _ -> date_str
+    }
+  }
+  
+  case string.split(date_part, "-") {
+    [year, month, day] -> {
+      let month_name = case month {
+        "01" -> "Jan"
+        "02" -> "Feb"
+        "03" -> "Mar"
+        "04" -> "Apr"
+        "05" -> "May"
+        "06" -> "Jun"
+        "07" -> "Jul"
+        "08" -> "Aug"
+        "09" -> "Sep"
+        "10" -> "Oct"
+        "11" -> "Nov"
+        "12" -> "Dec"
+        _ -> month
+      }
+      let day_num = case string.starts_with(day, "0") {
+        True -> string.slice(day, 1, 1)
+        False -> day
+      }
+      month_name <> " " <> day_num <> ", " <> year
+    }
     _ -> date_str
   }
 }

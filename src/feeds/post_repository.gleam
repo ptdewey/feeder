@@ -63,7 +63,9 @@ pub fn get_by_feed(
     SELECT id, feed_id, guid, title, link, description, content, published_at, fetched_at
     FROM posts
     WHERE feed_id = ?
-    ORDER BY published_at DESC, fetched_at DESC
+    ORDER BY 
+      COALESCE(published_at, fetched_at) DESC,
+      fetched_at DESC
     LIMIT ?
     "
 
@@ -83,7 +85,9 @@ pub fn get_all(db: Connection) -> Result(List(Post), FeedError) {
     "
     SELECT id, feed_id, guid, title, link, description, content, published_at, fetched_at
     FROM posts
-    ORDER BY published_at DESC
+    ORDER BY 
+      COALESCE(published_at, fetched_at) DESC,
+      fetched_at DESC
     "
 
   case sqlight.query(sql, db, [], post_decoder()) {

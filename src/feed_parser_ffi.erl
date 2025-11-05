@@ -1,5 +1,5 @@
 -module(feed_parser_ffi).
--export([parse_feed/1]).
+-export([parse_feed/1, normalize_date/1]).
 -include_lib("xmerl/include/xmerl.hrl"). 
 
 parse_feed(XmlBinary) ->
@@ -120,4 +120,55 @@ extract_atom_link(Node) ->
                 [#xmlAttribute{value=Href}|_] -> Href;
                 [] -> ""
             end
+    end.
+
+normalize_date(DateBinary) ->
+    try
+        DateString = binary_to_list(DateBinary),
+        case parse_rfc2822_date(DateString) of
+            {ok, Normalized} -> {ok, unicode:characters_to_binary(Normalized)};
+            error -> 
+                case is_iso8601_date(DateString) of
+                    true -> {ok, DateBinary};
+                    false -> error
+                end
+        end
+    catch
+        _:_ -> error
+    end.
+
+parse_rfc2822_date(DateString) ->
+    try
+        Tokens = string:tokens(DateString, " "),
+        case Tokens of
+            [_DayName, Day, Month, Year, Time | _] ->
+                MonthNum = month_to_number(Month),
+                Normalized = lists:flatten(io_lib:format("~s-~2..0s-~2..0s ~s", 
+                    [Year, MonthNum, Day, Time])),
+                {ok, Normalized};
+            _ -> error
+        end
+    catch
+        _:_ -> error
+    end.
+
+month_to_number("Jan") -> "01";
+month_to_number("Feb") -> "02";
+month_to_number("Mar") -> "03";
+month_to_number("Apr") -> "04";
+month_to_number("May") -> "05";
+month_to_number("Jun") -> "06";
+month_to_number("Jul") -> "07";
+month_to_number("Aug") -> "08";
+month_to_number("Sep") -> "09";
+month_to_number("Oct") -> "10";
+month_to_number("Nov") -> "11";
+month_to_number("Dec") -> "12";
+month_to_number(_) -> "01".
+
+is_iso8601_date(DateString) ->
+    case string:str(DateString, "-") > 0 andalso 
+         (string:str(DateString, "T") > 0 orelse string:str(DateString, " ") > 0) of
+        true -> true;
+        false -> false
     end.

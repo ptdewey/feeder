@@ -32,11 +32,37 @@ pub fn run(db: Connection) {
       UNIQUE(feed_id, guid)
     );
 
+    CREATE TABLE IF NOT EXISTS users (
+      username TEXT PRIMARY KEY,
+      password_hash TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS reading_list (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      url TEXT NOT NULL UNIQUE,
+      title TEXT NOT NULL,
+      description TEXT,
+      added_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS reading_list_archive (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      url TEXT NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT,
+      added_at TEXT NOT NULL,
+      archived_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
     CREATE INDEX IF NOT EXISTS idx_feeds_url ON feeds(url);
     CREATE INDEX IF NOT EXISTS idx_feeds_added_at ON feeds(added_at);
     CREATE INDEX IF NOT EXISTS idx_posts_feed_id ON posts(feed_id);
     CREATE INDEX IF NOT EXISTS idx_posts_published_at ON posts(published_at);
     CREATE INDEX IF NOT EXISTS idx_posts_guid ON posts(guid);
+    CREATE INDEX IF NOT EXISTS idx_reading_list_url ON reading_list(url);
+    CREATE INDEX IF NOT EXISTS idx_reading_list_added_at ON reading_list(added_at);
+    CREATE INDEX IF NOT EXISTS idx_reading_list_archive_archived_at ON reading_list_archive(archived_at);
     "
 
   case sqlight.exec(sql, db) {

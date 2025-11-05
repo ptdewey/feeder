@@ -29,6 +29,16 @@ pub fn fetch_posts(db: Connection, feed: Feed) -> Result(Int, FeedError) {
       // Store posts
       let posts =
         list.map(parsed_feed.posts, fn(parsed_post) {
+          let normalized_date = case parsed_post.published_at {
+            Some(date) -> {
+              case parser.normalize_date(date) {
+                Ok(normalized) -> Some(normalized)
+                Error(_) -> parsed_post.published_at
+              }
+            }
+            None -> None
+          }
+          
           post.NewPost(
             feed_id: feed_id,
             guid: parsed_post.guid,
@@ -36,7 +46,7 @@ pub fn fetch_posts(db: Connection, feed: Feed) -> Result(Int, FeedError) {
             link: parsed_post.link,
             description: parsed_post.description,
             content: parsed_post.content,
-            published_at: parsed_post.published_at,
+            published_at: normalized_date,
           )
         })
 

@@ -22,3 +22,6 @@ pub type ParsedPost {
 // Call Erlang helper to parse the feed
 @external(erlang, "feed_parser_ffi", "parse_feed")
 pub fn parse_feed(xml: String) -> Result(ParsedFeed, String)
+
+@external(erlang, "feed_parser_ffi", "normalize_date")
+pub fn normalize_date(date: String) -> Result(String, Nil)
