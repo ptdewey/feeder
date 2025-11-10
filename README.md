@@ -1,5 +1,7 @@
 # feeder
 
+An RSS feed aggregator built with Gleam!
+
 ## Usage
 
 ```sh
