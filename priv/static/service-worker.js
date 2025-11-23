@@ -1,4 +1,5 @@
-const CACHE_NAME = 'rss-feeder-v1';
+const CACHE_NAME = 'rss-feeder-v2';
+const STATIC_CACHE = 'rss-feeder-static-v2';
 const urlsToCache = [
   '/',
   '/feeds',
@@ -28,7 +29,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
+          if (cacheName !== CACHE_NAME && cacheName !== STATIC_CACHE) {
             console.log('Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
@@ -40,7 +41,25 @@ self.addEventListener('activate', (event) => {
   return self.clients.claim();
 });
 
-// Fetch event - serve from cache, fallback to network
+// Helper function to determine if request is for a page
+function isNavigationRequest(request) {
+  return request.mode === 'navigate' || 
+         (request.method === 'GET' && request.headers.get('accept').includes('text/html'));
+}
+
+// Helper function to determine if request is for static assets
+function isStaticAsset(url) {
+  return url.includes('/static/') || 
+         url.includes('/manifest.json') ||
+         url.endsWith('.js') ||
+         url.endsWith('.css') ||
+         url.endsWith('.png') ||
+         url.endsWith('.jpg') ||
+         url.endsWith('.svg') ||
+         url.endsWith('.ico');
+}
+
+// Fetch event - use different strategies for different content types
 self.addEventListener('fetch', (event) => {
   // Skip non-GET requests
   if (event.request.method !== 'GET') {
@@ -52,54 +71,66 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Cache hit - return response
-        if (response) {
-          // Still fetch from network to update cache in background
-          fetch(event.request).then((networkResponse) => {
-            if (networkResponse && networkResponse.status === 200) {
-              caches.open(CACHE_NAME).then((cache) => {
-                cache.put(event.request, networkResponse.clone());
-              });
-            }
-          }).catch(() => {
-            // Network fetch failed, but we have cached version
-          });
-          return response;
+  const url = new URL(event.request.url);
+
+  // Static assets: cache-first strategy
+  if (isStaticAsset(url.pathname)) {
+    event.respondWith(
+      caches.match(event.request).then((cachedResponse) => {
+        if (cachedResponse) {
+          return cachedResponse;
         }
-
-        // No cache hit - fetch from network
         return fetch(event.request).then((response) => {
-          // Don't cache non-successful responses
-          if (!response || response.status !== 200 || response.type === 'error') {
-            return response;
+          if (response && response.status === 200) {
+            const responseToCache = response.clone();
+            caches.open(STATIC_CACHE).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
           }
-
-          // Clone the response
-          const responseToCache = response.clone();
-
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
-
           return response;
-        }).catch((error) => {
-          console.log('Fetch failed:', error);
-          // Return a custom offline page if available
-          return caches.match('/offline.html').then((offlineResponse) => {
-            return offlineResponse || new Response('Offline - unable to load content', {
+        });
+      })
+    );
+    return;
+  }
+
+  // HTML pages: network-first strategy (always get fresh content)
+  if (isNavigationRequest(event.request)) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          // Cache the response for offline access
+          if (response && response.status === 200) {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return response;
+        })
+        .catch((error) => {
+          console.log('Network fetch failed, trying cache:', error);
+          // Network failed, try cache
+          return caches.match(event.request).then((cachedResponse) => {
+            if (cachedResponse) {
+              return cachedResponse;
+            }
+            // No cache, return offline message
+            return new Response('Offline - unable to load content', {
               status: 503,
               statusText: 'Service Unavailable',
               headers: new Headers({
-                'Content-Type': 'text/plain'
+                'Content-Type': 'text/html'
               })
             });
           });
-        });
-      })
-  );
+        })
+    );
+    return;
+  }
+
+  // API calls and other requests: network-first, no cache
+  event.respondWith(fetch(event.request));
 });
 
 // Handle messages from the client

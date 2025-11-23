@@ -191,15 +191,15 @@ fn html_layout(page_title: String, content: Node) -> Node {
     .post-meta { color: #9b8b7e; font-size: 1rem; }
     .feed-item { padding: 0.5rem; border-bottom: 1px solid #d4cdc0; }
     .feed-item:last-child { border-bottom: none; }
-    .feed-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem; }
-    .feed-title a { color: #5d4e37; text-decoration: none; }
+    .feed-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem; word-break: break-word; overflow-wrap: break-word; }
+    .feed-title a { color: #5d4e37; text-decoration: none; word-break: break-word; overflow-wrap: break-word; }
     .feed-title a:hover { color: #8b7355; text-decoration: underline; }
     .feed-url { color: #9b8b7e; font-size: 1rem; word-break: break-all; overflow-wrap: break-word; }
     .btn { display: inline-block; padding: 0.75rem 1.5rem; background: #a89074; color: #f4ecd8; text-decoration: none; border-radius: 4px; border: none; cursor: pointer; font-size: 1.1rem; font-family: Georgia, 'Times New Roman', serif; }
     .btn:hover { background: #8b7355; }
     .form-group { margin-bottom: 1rem; }
     .form-group label { display: block; margin-bottom: 0.5rem; font-weight: 500; font-size: 1.1rem; }
-    .form-group input { width: 100%; padding: 0.75rem; border: 1px solid #d4cdc0; border-radius: 4px; font-size: 1.1rem; background: #f4ecd8; color: #3d3428; font-family: Georgia, 'Times New Roman', serif; }
+    .form-group input, .form-group textarea { width: 100%; padding: 0.75rem; border: 1px solid #d4cdc0; border-radius: 4px; font-size: 1.1rem; background: #f4ecd8; color: #3d3428; font-family: Georgia, 'Times New Roman', serif; }
     .error { background: #b5745a; color: #f4ecd8; padding: 1rem; border-radius: 4px; margin-bottom: 1rem; font-size: 1.1rem; }
     .item-with-action { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; }
     .item-content { flex: 1; min-width: 0; }

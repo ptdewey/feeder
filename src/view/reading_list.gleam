@@ -24,7 +24,7 @@ pub fn render(items: List(reading_list_item.ReadingListItem)) -> Node {
               attr.name("redirect"),
               attr.value("true"),
             ]),
-            html.div([attr.style("margin-bottom: 1rem;")], [
+            html.div([attr.class("form-group")], [
               html.label([attr.for("url")], [html.Text("URL")]),
               html.input([
                 attr.type_("url"),
@@ -32,27 +32,25 @@ pub fn render(items: List(reading_list_item.ReadingListItem)) -> Node {
                 attr.name("url"),
                 attr.placeholder("https://example.com/article"),
                 attr.Attr("required", ""),
-                attr.style("width: 100%; padding: 0.5rem; margin-top: 0.25rem;"),
               ]),
             ]),
-            html.div([attr.style("margin-bottom: 1rem;")], [
+            html.div([attr.class("form-group")], [
               html.label([attr.for("title")], [html.Text("Title (optional)")]),
               html.input([
                 attr.type_("text"),
                 attr.id("title"),
                 attr.name("title"),
                 attr.placeholder("Leave blank to fetch from page"),
-                attr.style("width: 100%; padding: 0.5rem; margin-top: 0.25rem;"),
               ]),
             ]),
-            html.div([attr.style("margin-bottom: 1rem;")], [
+            html.div([attr.class("form-group")], [
               html.label([attr.for("description")], [html.Text("Description (optional)")]),
               html.textarea(
                 [
                   attr.id("description"),
                   attr.name("description"),
                   attr.placeholder("Leave blank to fetch from page"),
-                  attr.style("width: 100%; padding: 0.5rem; margin-top: 0.25rem; min-height: 50px;"),
+                  attr.style("min-height: 50px;"),
                 ],
                 [html.Text("")],
               ),
