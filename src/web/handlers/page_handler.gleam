@@ -194,7 +194,7 @@ fn html_layout(page_title: String, content: Node) -> Node {
     .feed-title { font-size: 1.2rem; font-weight: 600; margin-bottom: 0.5rem; }
     .feed-title a { color: #5d4e37; text-decoration: none; }
     .feed-title a:hover { color: #8b7355; text-decoration: underline; }
-    .feed-url { color: #9b8b7e; font-size: 1rem; }
+    .feed-url { color: #9b8b7e; font-size: 1rem; word-break: break-all; overflow-wrap: break-word; }
     .btn { display: inline-block; padding: 0.75rem 1.5rem; background: #a89074; color: #f4ecd8; text-decoration: none; border-radius: 4px; border: none; cursor: pointer; font-size: 1.1rem; font-family: Georgia, 'Times New Roman', serif; }
     .btn:hover { background: #8b7355; }
     .form-group { margin-bottom: 1rem; }
@@ -223,8 +223,49 @@ fn html_layout(page_title: String, content: Node) -> Node {
         attr.name("viewport"),
         attr.content("width=device-width, initial-scale=1.0"),
       ]),
+      html.meta([
+        attr.name("theme-color"),
+        attr.content("#8b7355"),
+      ]),
+      html.meta([
+        attr.name("description"),
+        attr.content("RSS Feed Aggregator - Read your favorite feeds"),
+      ]),
+      html.meta([
+        attr.name("apple-mobile-web-app-capable"),
+        attr.content("yes"),
+      ]),
+      html.meta([
+        attr.name("apple-mobile-web-app-status-bar-style"),
+        attr.content("default"),
+      ]),
+      html.meta([
+        attr.name("apple-mobile-web-app-title"),
+        attr.content("RSS Feeder"),
+      ]),
+      html.Element("link", [
+        attr.Attr("rel", "manifest"),
+        attr.Attr("href", "/manifest.json"),
+      ], []),
+      html.Element("link", [
+        attr.Attr("rel", "apple-touch-icon"),
+        attr.Attr("href", "/static/icon-192.svg"),
+      ], []),
       html.title(page_title),
       html.Element("style", [], [html.Text(styles)]),
+      html.Element("script", [], [html.Text("
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', function() {
+            navigator.serviceWorker.register('/service-worker.js')
+              .then(function(registration) {
+                console.log('ServiceWorker registration successful');
+              })
+              .catch(function(err) {
+                console.log('ServiceWorker registration failed: ', err);
+              });
+          });
+        }
+      ")]),
     ]),
     html.Body([], [
       html.nav([], [
